@@ -2,7 +2,7 @@
 # 
 # MIT License
 # 
-# Copyright (c) 2021 Faction Group, LLC
+# Copyright (c) 2022 Faction Group, LLC
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,24 +22,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# This init script is used to show Databricks attachment of a Faction NFS CCV
-# This is not needed for object
+# This init script is used to add a hostfile entry if one is missing
+#
+# Not recommended for production usage, where DNS should be utilized,
+# but useful for a simple POC
 
 set -x
 
-#install the nfs package
-apt update
-apt-get -y install nfs-common
-apt-get -y install libfuse-dev libnfs11 libtool m4 automake libnfs-dev xsltproc git
+### CHANGE IP and Faction Regional hostname to suit your Object endpoint and hostname
+IP="172.30.0.1"
+HOSTNAME="us-west-1.s3.faction.cloud"
 
-git clone https://github.com/sahlberg/fuse-nfs.git
-cd fuse-nfs
-./setup.sh
-./configure
-make
-make install
-
-mkdir -p /ccvs/multicloud/premier
-fuse-nfs -a -n nfs://172.16.64.1/ext_ds_01/ds01 -m /ccvs/multicloud/premier
-
+# Test for existing host entry
+MATCH="$(grep -n $HOSTNAME /etc/hosts)"
+if [ ! -z "$MATCH" ] ;
+then
+	echo "Host File entry exists and WILL NOT be updated. Entry with line number: "
+	echo "$MATCH"
+else
+	echo "Adding host entry."
+	echo "$IP $HOSTNAME" | sudo tee -a /etc/hosts > /dev/null
+fi
 
